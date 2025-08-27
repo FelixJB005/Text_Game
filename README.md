@@ -2,363 +2,301 @@ package programmes;
 
 import java.util.*;
 
-// -------- Main Entry --------
-public class TheCorridor {
+public class CorridorEscape {
+
+    private Scanner scanner = new Scanner(System.in);
+    private Player player = new Player();
+    private boolean testerMode = false;
+
     public static void main(String[] args) {
-        new Game().start();
+        new CorridorEscape().start();
     }
-}
 
-// -------- Game Engine --------
-class Game {
-    private Room[] rooms;
-    private Player player;
-    private boolean running = true;
-    private Scanner in = new Scanner(System.in);
-
-    public void start() {
+    private void start() {
         banner();
-        askName();
-        introStory();
-        initWorld();
-        look();
-        while (running) {
-            System.out.print("\n> ");
-            String line = in.nextLine().trim();
-            if (line.isEmpty()) continue;
-            handleCommand(line);
+
+        System.out.print("Are you a player or a tester? ");
+        String mode = scanner.nextLine().trim().toLowerCase();
+
+        // Ask for name (was missing previously)
+        System.out.print("Enter your name: ");
+        String name = scanner.nextLine().trim();
+        player.setName(name.isEmpty() ? "Player" : name);
+
+        if (mode.equals("tester")) {
+            testerMode = true;
+            System.out.println("\n[Tester mode enabled. You can freely explore and exit without combining clues.]");
+            System.out.println("Available commands: look, approach <room>, inventory, combine, hint, quit");
+            player.moveTo(0);
+            look();
+        } else {
+            System.out.println("\nYou find yourself in a long, dim corridor with doors on each side.");
+            player.moveTo(0); // corridor
+            look(); // show initial description for non-testers also
         }
-        System.out.println("\nThanks for playing.");
+
+        while (true) {
+            System.out.print("\n> ");
+            String cmd = scanner.nextLine().trim().toLowerCase();
+            if (cmd.equals("quit")) {
+                System.out.println("Game over.");
+                break;
+            } else if (cmd.startsWith("approach")) {
+                move(cmd);
+            } else if (cmd.equals("look")) {
+                look();
+            } else if (cmd.equals("combine")) {
+                combine();
+            } else if (cmd.equals("inventory")) {
+                player.showInventory();
+            } else if (cmd.equals("hint")) {
+                hint();
+            } else {
+                System.out.println("Unknown command.");
+            }
+        }
     }
 
     private void banner() {
-        System.out.println("==============================");
-        System.out.println("      THE CORRIDOR (Java)     ");
-        System.out.println("==============================");
-        System.out.println("Type 'command' for commands.");
+        System.out.println("\n===================================");
+        System.out.println("\n                                   ");
+        System.out.println("          THE CORRIDOR ESCAPE       ");
+        System.out.println("\n                                   ");
+        System.out.println("===================================\n");
     }
 
-    private void askName() {
-        System.out.print("Before we begin... what is your name, stranger? ");
-        String pname = in.nextLine().trim();
-        if (pname.isEmpty()) pname = "Detective";
-        player = new Player(pname);
-        System.out.println("Welcome, " + player.name() + ".");
-    }
+    private void move(String cmd) {
+        if (cmd.startsWith("approach")) {
+            String target = cmd.substring(8).trim();
 
-    private void introStory() {
-        System.out.println("\nYou wake up on the cold floor. Your head throbs — someone knocked you out and dragged you here.\n"
-                + "Dim lights flicker as you struggle to your feet. Four doors surround you.\n"
-                + "At the far end, one door stands out with the word 'EXIT' carved into it... but it is locked tight.");
-    }
-
-    private void initWorld() {
-        rooms = new Room[6];
-        rooms[0] = new Room("corridor",
-            "A dim corridor with flickering lights. Four doors surround you. At the far end, a heavy door marked 'EXIT' stands locked.");
-        rooms[1] = new Room("room1", "A dusty room. On a desk lies a riddle.",
-            new Item("L", "Letter L"), "What is 2 + 2?", "4");
-        rooms[2] = new Room("room2", "Stacks of crates hide a paper with a question.",
-            new Item("O", "Letter O"), "What is the capital of France?", "paris");
-        rooms[3] = new Room("room3", "A dripping pipe echoes. A chalk puzzle is written on the wall.",
-            new Item("C", "Letter C"), "I speak without a mouth and hear without ears. What am I?", "echo");
-        rooms[4] = new Room("room4", "An abandoned bunk bed. A note is scribbled.",
-            new Item("K", "Letter K"), "I’m an odd number. Take away one letter and I become even. What number am I?", "seven");
-        rooms[5] = new Room("exit", "The heavy door marked 'EXIT'. It has a keypad and looks impossible to force open.");
-        player.moveTo(0);
-    }
-
-    private void handleCommand(String line) {
-        String[] parts = line.split(" ", 2);
-        String cmd = parts[0].toLowerCase();
-        String arg = parts.length > 1 ? parts[1].trim() : "";
-
-        if (cmd.equals("command")) help();
-        else if (cmd.equals("look")) look();
-        else if (cmd.equals("approach")) approach(arg);
-        else if (cmd.equals("take")) take(arg);
-        else if (cmd.equals("inspect")) inspect(arg);
-        else if (cmd.equals("combine")) combine();
-        else if (cmd.equals("inventory") || cmd.equals("inv")) inventory();
-        else if (cmd.equals("lock")) unlockExit();
-        else if (cmd.equals("answer")) answer(arg);
-        else if (cmd.equals("exitroom")) exitRoom();
-        else if (cmd.equals("quit")) running = false;
-        else {
-            // Try treating it as a puzzle answer
-            Room r = currentRoom();
-            if (r.getPuzzle() != null && !r.isSolved()) {
-                answer(line);
-            } else {
-                System.out.println("I don't understand that command.");
+            switch (target) {
+                case "room1":
+                    player.moveTo(1);
+                    break;
+                case "room2":
+                    player.moveTo(2);
+                    break;
+                case "room3":
+                    player.moveTo(3);
+                    break;
+                case "room4":
+                    player.moveTo(4);
+                    break;
+                case "exit":
+                    player.moveTo(5);
+                    break;
+                default:
+                    System.out.println("That place doesn’t exist.");
+                    return;
             }
+            look();
         }
-    }
-
-    private void help() {
-        System.out.println("Commands:");
-        System.out.println("  look                 - describe the current room");
-        System.out.println("  approach <room/exit> - move toward a room or exit (asks if you want to enter)");
-        System.out.println("  take <item>          - pick up an item if puzzle solved");
-        System.out.println("  answer <solution>    - attempt to solve the room's puzzle");
-        System.out.println("  combine              - combine clues into the pass word");
-        System.out.println("  lock                 - type this at the exit door to escape");
-        System.out.println("  exitRoom             - type this to escape a room back to the corridor");
-        System.out.println("  inventory | inv      - show what you carry");
-        System.out.println("  quit                 - leave the game");
     }
 
     private void look() {
-        Room r = currentRoom();
-        System.out.println("\n" + r.describe());
-        if (r.getPuzzle() != null && !r.isSolved()) {
-            System.out.println("Puzzle: " + r.getPuzzle());
-            System.out.println("Type 'answer <your answer>' to try solving it.");
-        }
-        if (r.isSolved() && r.getItem() != null) {
-            System.out.println("You see: " + r.getItem().name());
-        }
-    }
-
-    // -------- FIXED APPROACH --------
-    private void approach(String target) {
-        // Exit door
-        if (target.equalsIgnoreCase("exit")) {
-            if (player.location() == 5) {
-                System.out.println("You are already at the exit door.");
-                return;
-            }
-            System.out.println("You walk toward the large door marked 'EXIT'. It's locked and has a keypad.");
-            player.moveTo(5);
-            look();
-            return;
-        }
-
-        // Rooms 1-4
-        int targetIndex = -1;
-        if (target.equalsIgnoreCase("room1")) targetIndex = 1;
-        else if (target.equalsIgnoreCase("room2")) targetIndex = 2;
-        else if (target.equalsIgnoreCase("room3")) targetIndex = 3;
-        else if (target.equalsIgnoreCase("room4")) targetIndex = 4;
-
-        if (targetIndex != -1) {
-            if (player.location() == targetIndex) {
-                System.out.println("You're already inside " + target + ".");
-                return;
-            }
-            System.out.println("You stand before " + target + ". Do you want to enter? (yes/no)");
-            String choice = in.nextLine().trim().toLowerCase();
-
-            if (choice.equals("yes")) {
-                player.moveTo(targetIndex);
-                System.out.println("You enter " + target + "...");
-                look();
-            } else {
-                System.out.println("You decide not to enter and remain in the corridor.");
-                player.moveTo(0);
-            }
-        } else {
-            System.out.println("You can't approach that.");
-        }
-    }
-
-    private void take(String name) {
-        Room r = currentRoom();
-        if (!r.isSolved()) {
-            System.out.println("You need to solve the puzzle first.");
-            return;
-        }
-        if (r.getItem() == null) {
-            System.out.println("No item here.");
-            return;
-        }
-        if (name.equalsIgnoreCase(r.getItem().name())) {
-            player.addItem(r.getItem());
-            System.out.println("Taken: " + r.getItem().name());
-            r.removeItem();
-        } else {
-            System.out.println("That item is not here.");
-        }
-    }
-
-    private void inspect(String target) {
-        if (player.has(target)) {
-            Item it = player.getItem(target);
-            System.out.println(it.describe());
-        } else {
-            System.out.println("You don't see that.");
-        }
-    }
-
-    private void answer(String attempt) {
-        Room r = currentRoom();
-        if (r.getPuzzle() == null) {
-            System.out.println("No puzzle here.");
-            return;
-        }
-        if (attempt.equalsIgnoreCase(r.getAnswer())) {
-            System.out.println("Correct! A clue appears: " + r.getItem().name());
-            r.setSolved(true);
-
-            if (r.getItem() != null) {
-                System.out.println("Do you want to pick up the item? (yes/no)");
-                String choice = in.nextLine().trim().toLowerCase();
-                if (choice.equals("yes")) {
-                    player.addItem(r.getItem());
-                    System.out.println("You picked up: " + r.getItem().name());
-                    r.removeItem();
+        switch (player.getLocation()) {
+            case 0:
+                System.out.println("You are in the corridor. Doors lead to Room1, Room2, Room3, Room4, and the Exit.");
+                break;
+            case 1:
+                System.out.println("Room1: A stone tablet with strange carvings awaits you.");
+                puzzleRoom1();
+                break;
+            case 2:
+                System.out.println("Room2: A dusty library with a single glowing book.");
+                puzzleRoom2();
+                break;
+            case 3:
+                System.out.println("Room3: A flickering terminal hums faintly.");
+                puzzleRoom3();
+                break;
+            case 4:
+                System.out.println("Room4: A painting hangs crooked, hiding something behind it.");
+                puzzleRoom4();
+                break;
+            case 5:
+                if (testerMode) {
+                    System.out.println("As a tester, you bypass the puzzles. The door accepts your presence.");
+                    conclusionScene();
+                    System.exit(0);
                 } else {
-                    System.out.println("You leave the item where it is.");
+                    if (player.hasCombined()) {
+                        System.out.print("The keypad glows. Enter the passkey: ");
+                        String pass = scanner.nextLine().trim().toLowerCase();
+                        if (pass.equals("lock")) {
+                            conclusionScene();
+                            System.exit(0);
+                        } else {
+                            System.out.println("Wrong passkey.");
+                        }
+                    } else {
+                        System.out.println("The keypad glows, but the symbols make no sense… You need to combine your clues first.");
+                    }
                 }
-            }
+                break;
+        }
+    }
 
-            System.out.println("Do you want to leave the room and go back to the corridor? (yes/no)");
-            String leave = in.nextLine().trim().toLowerCase();
-            if (leave.equals("yes")) {
-                player.moveTo(0);
-                System.out.println("You return to the corridor.");
-                look();
+    private void puzzleRoom1() {
+        if (!player.hasItem("Roman Numeral Clue")) {
+            System.out.print("Puzzle: What is X + V in Roman numerals? ");
+            String ans = scanner.nextLine().trim().toUpperCase();
+            if (ans.equals("XV")) {
+                System.out.println("Correct! You found a Roman Numeral Clue.");
+                System.out.print("Take the item? (yes/no): ");
+                if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+                    player.addItem("Roman Numeral Clue");
+                }
             } else {
-                System.out.println("You remain inside " + r.id() + ".");
+                System.out.println("Wrong answer.");
             }
+        }
+    }
 
-        } else {
-            System.out.println("Wrong answer. Try again.");
+    private void puzzleRoom2() {
+        if (!player.hasItem("Cipher Clue")) {
+            System.out.print("Puzzle: Decode this (Caesar shift 1): MPQF. ");
+            String ans = scanner.nextLine().trim().toLowerCase();
+            if (ans.equals("lope")) {
+                System.out.println("Correct! You found a Cipher Clue.");
+                System.out.print("Take the item? (yes/no): ");
+                if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+                    player.addItem("Cipher Clue");
+                }
+            } else {
+                System.out.println("Wrong answer.");
+            }
+        }
+    }
+
+    private void puzzleRoom3() {
+        if (!player.hasItem("Binary Clue")) {
+            System.out.print("Puzzle: What does 01001100 translate to in ASCII? ");
+            String ans = scanner.nextLine().trim().toUpperCase();
+            if (ans.equals("L")) {
+                System.out.println("Correct! You found a Binary Clue.");
+                System.out.print("Take the item? (yes/no): ");
+                if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+                    player.addItem("Binary Clue");
+                }
+            } else {
+                System.out.println("Wrong answer.");
+            }
+        }
+    }
+
+    private void puzzleRoom4() {
+        if (!player.hasItem("Riddle Clue")) {
+            System.out.print("Puzzle: I speak without a mouth and hear without ears. What am I? ");
+            String ans = scanner.nextLine().trim().toLowerCase();
+            if (ans.equals("echo")) {
+                System.out.println("Correct! You found a Riddle Clue.");
+                System.out.print("Take the item? (yes/no): ");
+                if (scanner.nextLine().trim().equalsIgnoreCase("yes")) {
+                    player.addItem("Riddle Clue");
+                }
+            } else {
+                System.out.println("Wrong answer.");
+            }
         }
     }
 
     private void combine() {
-        if (player.has("L") && player.has("O") && player.has("C") && player.has("K")) {
-            System.out.println("You combine the letters into the word: LOCK.");
+        if (player.hasAllItems()) {
+            System.out.println("You piece the four clues together… The answer is LOCK.");
+            player.setCombined(true);
         } else {
-            System.out.println("You don't have all the letters yet.");
+            System.out.println("You don’t have all the clues yet.");
         }
     }
 
-    private void unlockExit() {
-        if (player.location() == 5) {
-            System.out.print("Enter password: ");
-            String attempt = in.nextLine().trim().toLowerCase();
-            if (attempt.equals("lock")) {
-                System.out.println("The keypad accepts the word LOCK. The heavy door unlocks, and you step into freedom!");
-                running = false;
-            } else {
-                System.out.println("The keypad flashes red: WRONG PASSWORD.");
-            }
-        } else {
-            System.out.println("You can only use this command at the exit door.");
+    private void hint() {
+        switch (player.getLocation()) {
+            case 1:
+                System.out.println("Hint: X is 10, V is 5.");
+                break;
+            case 2:
+                System.out.println("Hint: Caesar shift means move each letter back one.");
+                break;
+            case 3:
+                System.out.println("Hint: Convert binary to ASCII.");
+                break;
+            case 4:
+                System.out.println("Hint: Think about something that repeats your voice.");
+                break;
+            default:
+                System.out.println("No hints here.");
         }
     }
 
-    private void exitRoom() 
-    {
-    int loc = player.location();
-    if (loc >= 1 && loc <= 4) {
-        player.moveTo(0);
-        System.out.println("You leave " + currentRoom().id() + " and return to the corridor.");
-        look();
-    } else {
-        System.out.println("You’re not inside a room right now.");
-    }
-    }
-
-    private void inventory() {
-        if (player.inventoryCount() == 0) {
-            System.out.println("You're carrying nothing.");
-        } else {
-            System.out.print(player.name() + " is carrying: ");
-            player.showInventory();
-        }
-    }
-
-    private Room currentRoom() {
-        return rooms[player.location()];
+    private void conclusionScene() {
+        System.out.println("\n===================================");
+        System.out.println("           ESCAPE ACHIEVED          ");
+        System.out.println("===================================");
+        System.out.println("The keypad beeps. The lock clicks open. ");
+        System.out.println("The EXIT door groans as it swings wide, spilling pale light into the corridor.");
+        System.out.println();
+        System.out.println("You step through. The stale air of confinement is replaced by the cool breath of freedom.");
+        System.out.println("Behind you, the corridor waits in silence, its secrets locked away once more.");
+        System.out.println();
+        System.out.println("You made it out.");
+        System.out.println("===================================");
     }
 }
 
-// -------- Domain: Room --------
-class Room {
-    private String id;
-    private String description;
-    private Item item;
-    private String puzzle;
-    private String answer;
-    private boolean solved = false;
-
-    public Room(String id, String description) {
-        this.id = id;
-        this.description = description;
-    }
-
-    public Room(String id, String description, Item item, String puzzle, String answer) {
-        this.id = id;
-        this.description = description;
-        this.item = item;
-        this.puzzle = puzzle;
-        this.answer = answer;
-    }
-
-    public String id() { return id; }
-    public String describe() { return description; }
-
-    public Item getItem() { return item; }
-    public void removeItem() { this.item = null; }
-
-    public String getPuzzle() { return puzzle; }
-    public String getAnswer() { return answer; }
-    public boolean isSolved() { return solved; }
-    public void setSolved(boolean s) { this.solved = s; }
-}
-
-// -------- Domain: Item --------
-class Item {
-    private String name;
-    private String description;
-
-    public Item(String name, String description) {
-        this.name = name;
-        this.description = description;
-    }
-
-    public String name() { return name; }
-    public String describe() { return description; }
-}
-
-// -------- Domain: Player --------
 class Player {
-    private String playerName;
-    private int currentRoom;
-    private Item[] inventory = new Item[10];
-    private int count = 0;
+    private int location = 0;
+    private List<String> inventory = new ArrayList<>();
+    private boolean combined = false;
+    private String name = "Player";
 
-    public Player(String playerName) { this.playerName = playerName; }
-    public String name() { return playerName; }
-
-    public void moveTo(int roomIndex) { this.currentRoom = roomIndex; }
-    public int location() { return currentRoom; }
-
-    public void addItem(Item item) { inventory[count++] = item; }
-
-    public boolean has(String name) {
-        for (int i = 0; i < count; i++) {
-            if (inventory[i] != null && inventory[i].name().equalsIgnoreCase(name)) return true;
-        }
-        return false;
+    public void moveTo(int loc) {
+        this.location = loc;
     }
 
-    public Item getItem(String name) {
-        for (int i = 0; i < count; i++) {
-            if (inventory[i] != null && inventory[i].name().equalsIgnoreCase(name)) return inventory[i];
-        }
-        return null;
+    public int getLocation() {
+        return location;
     }
 
-    public int inventoryCount() { return count; }
+    public void addItem(String item) {
+        if (!inventory.contains(item)) {
+            inventory.add(item);
+            System.out.println(item + " added to inventory.");
+        }
+    }
+
+    public boolean hasItem(String item) {
+        return inventory.contains(item);
+    }
 
     public void showInventory() {
-        for (int i = 0; i < count; i++) {
-            if (inventory[i] != null) System.out.print(inventory[i].name() + " ");
+        if (inventory.isEmpty()) {
+            System.out.println("Inventory is empty.");
+        } else {
+            System.out.println("Inventory: " + inventory);
         }
-        System.out.println();
+    }
+
+    public boolean hasAllItems() {
+        return inventory.contains("Roman Numeral Clue") &&
+               inventory.contains("Cipher Clue") &&
+               inventory.contains("Binary Clue") &&
+               inventory.contains("Riddle Clue");
+    }
+
+    public void setCombined(boolean value) {
+        combined = value;
+    }
+
+    public boolean hasCombined() {
+        return combined;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 }
