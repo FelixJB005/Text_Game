@@ -21,16 +21,27 @@
 
 */
 import javafx.animation.PauseTransition;   //: small delays / timed transitions between scenes.
+
 import javafx.application.Application;  // : JavaFX entry point class.
+
 import javafx.application.Platform;       // : used to exit the app cleanly.
+
 import javafx.geometry.*;                // : layout helpers (Insets, Pos).
+
 import javafx.scene.*;                    //: core scene graph, controls, layout containers.
+
 import javafx.scene.image.*;              //: load and display background images.
+
 import javafx.scene.layout.*;             //: BorderPane, VBox/HBox, StackPane for layout composition.
+
 import javafx.scene.paint.Color;          //: used for overlay/text color.
+
 import javafx.scene.text.Font;             //: set fonts for labels and controls.
+
 import javafx.stage.Stage;                 //: main application window.
+
 import javafx.util.Duration;               //: durations for PauseTransition.
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -40,8 +51,14 @@ import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
 
 
+
+
 import java.io.File;                       //: check for presence of image files on disk.
+
 import java.util.*;                        //: collections and Optional used by dialogs and state.
+
+
+
 
 public class CorridorAdventure extends Application {
 
