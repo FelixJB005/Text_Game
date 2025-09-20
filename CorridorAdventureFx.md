@@ -12,14 +12,25 @@
         ├─ out/                 <-- compiled .class files go here
         │
         ├─ images/              <-- all game images go here
-        │   ├─ shadow.png       <-- shadow image used in death sequence
-        │   ├─ death.png        <-- death cinematic image
-        │   ├─ room1.png        <-- example room image (if you have visuals per room)
-        │   ├─ storage.png      <-- storage room image
-        │   ├─ study.png        <-- study room image
-        │   └─ any_other_images.png  <-- add other game images here
+        |   ├─ title.jpg        <-- title screen image
+        │   |─ mansion_out.jpg  <-- mansion exterior image
+        │   ├─ mansion_in.jpg   <-- mansion interior image
+        │   ├─ hallway.jpg      <-- hallway image
+        │   ├─ room_1.jpg      <-- room 1 image
+        │   ├─ storage.jpg     <-- storage room image
+        │   ├─ study.jpg       <-- study room image
+        │   ├─ exit.jpg         <-- exit door image
+        │   ├─ escape.jpg       <-- escape ending image
+        |   ├─ exit_2.jpg        <-- death ending image
+        │___├─ shadow.png       <-- shadow image used in death sequence
+
+
+                                 OR
+
+                    images ->"C:/Java/Programe/images/"
 
 */
+
 import javafx.animation.PauseTransition;   //: small delays / timed transitions between scenes.
 
 import javafx.application.Application;  // : JavaFX entry point class.
@@ -38,18 +49,23 @@ import javafx.scene.paint.Color;          //: used for overlay/text color.
 
 import javafx.scene.text.Font;             //: set fonts for labels and controls.
 
+import javafx.scene.text.FontWeight;
+
 import javafx.stage.Stage;                 //: main application window.
 
 import javafx.util.Duration;               //: durations for PauseTransition.
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.shape.Rectangle;
 
+import javafx.geometry.Pos;
+
+import javafx.scene.control.*;
+
+import javafx.scene.image.Image;
+
+import javafx.scene.image.ImageView;
+
+import javafx.scene.shape.Rectangle;
 
 
 
@@ -57,24 +73,24 @@ import java.io.File;                       //: check for presence of image files
 
 import java.util.*;                        //: collections and Optional used by dialogs and state.
 
-
-
-
 public class CorridorAdventure extends Application {
 
     // -------- timing constants (tweak these if you want slower/faster) -------
     private static final double PAUSE_SHORT = 1.0;
-    private static final double PAUSE_MED   = 1.0;
+    private static final double PAUSE_MED   = 2.0;
     private static final double PAUSE_LONG  = 3.0;
     private static final double BLACKOUT_DEATH = 2.0;
     private Label desc;
     // -------- game & UI state ----------
     private Stage primaryStage;
     private final String IMAGE_PATH = "C:/Java/Programe/images/"; // change to your images folder
+    
     private String playerName = "";
 
     private boolean ended = false;         // reached ending flag
+    
     private Set<Character> letters = new LinkedHashSet<>(); // collected letters O,C,K
+    
     private Map<String, Boolean> solved = new HashMap<>(); // solved flags
 
     // top-right inventory box (rebuilt each time)
@@ -82,7 +98,8 @@ public class CorridorAdventure extends Application {
     // hidden log area for internal messages (not shown in UI)
     private TextArea logArea;
 
-    public static void main(String[] args) { launch(args); }
+    public static void main(String[] args)
+     { launch(args); }
 
     // -------------------- Helpers --------------------
 
@@ -111,15 +128,25 @@ public class CorridorAdventure extends Application {
     }
 
     /** Show a brief full-screen black scene and then run the Runnable. */
-    private void showTemporaryBlackout(double seconds, Runnable after) {
-        StackPane black = new StackPane();
-        black.setStyle("-fx-background-color:black;");
-        Scene blackScene = new Scene(black, Math.max(1000, primaryStage.getWidth()), Math.max(700, primaryStage.getHeight()));
-        primaryStage.setScene(blackScene);
-        PauseTransition p = new PauseTransition(Duration.seconds(seconds));
-        p.setOnFinished(e -> after.run());
-        p.play();
-    }
+    private void showTemporaryBlackout(double seconds, Runnable after) 
+    {
+    // get current stage size for exact fullscreen coverage
+    double width = primaryStage.getWidth() > 0 ? primaryStage.getWidth() : 1000;
+    double height = primaryStage.getHeight() > 0 ? primaryStage.getHeight() : 700;
+
+    StackPane black = new StackPane();
+    black.setStyle("-fx-background-color: black;");          // full black screen
+    black.setPrefSize(width, height);
+
+    Scene blackScene = new Scene(black, width, height);
+    primaryStage.setScene(blackScene);
+
+    // restore the next scene after 'seconds'
+    PauseTransition p = new PauseTransition(Duration.seconds(seconds));
+    p.setOnFinished(e -> after.run());
+    p.play();
+}
+
 
     /**
      * Build a scene with optional background image, a dimming rectangle, and an overlay BorderPane.
@@ -207,7 +234,7 @@ public class CorridorAdventure extends Application {
      * If pendantTaken == true:
      *   1. Magnifying Glass
      *   2. Pendant (3)    -> show numeric pendantNumber inside ()
-     *   3. L : L         -> literal 'L'
+     *   3. L : L/_        -> literal 'L'
      *   4. O : O/_ etc.
      */
     // Class fields
@@ -402,13 +429,18 @@ private void updateInventoryUI() {
         BorderPane overlay = new BorderPane();
 
         Label desc = new Label(
-                playerName + " — a world-class detective. Rain beads on your collar and the house stares back with blind windows. " +
-                        "You have come following the trail of numerous missing cases — names and faces that never found their way home.\n\n" +
-                        "A magnifying glass sits in your pocket, a small, stubborn proof that you won't leave a question unanswered. " +
-                        "The mansion's stonework is pitted and patient; shutters rattle with the sighs of rooms that remember."
-        );
-        overlay.setTop(buildTopBar(true, desc));
-        BorderPane.setMargin(overlay.getTop(), new Insets(8));
+        playerName + " — a world-class detective. Rain beads on your collar and the house stares back with blind windows. " +
+        "You have come following the trail of numerous missing cases — names and faces that never found their way home.\n\n" +
+        "A magnifying glass sits in your pocket, a small, stubborn proof that you won't leave a question unanswered. " +
+        "The mansion's stonework is pitted and patient; shutters rattle with the sighs of rooms that remember."
+            );
+        desc.setWrapText(true);
+        desc.setTextFill(Color.BLUE);  // your dramatic color
+        desc.setFont(Font.font("Serif", FontWeight.BOLD, 22)); // bigger & bold
+
+        Node topBar = buildTopBar(true, desc);  // create the top bar
+        overlay.setTop(topBar);
+        BorderPane.setMargin(topBar, new Insets(8));
 
         Button north = new Button("North (Approach Mansion)");
         styleButton(north);
@@ -446,12 +478,23 @@ private void updateInventoryUI() {
         });
 
         take.setOnAction(e -> {
-            if (!pendantTaken) {
-                pendantTaken = true;
-                updateInventoryUI();
-            }
-            showTemporaryBlackout(PAUSE_SHORT, this::showHallway);
-        });
+    if (!pendantTaken) {
+        pendantTaken = true;
+        updateInventoryUI();
+
+        // Step 1: Show the text in blue-violet over mansion_in.jpg
+        desc.setText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t\t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
+        desc.setTextFill(Color.BLUEVIOLET); // Blue-violet text
+        desc.setFont(Font.font("System", 20)); // Make the text bigger (adjust size as needed)
+
+        appendText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t\t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
+
+        // Step 2: Wait 3 seconds, then trigger blackout
+        PauseTransition pause = new PauseTransition(Duration.seconds(3));
+        pause.setOnFinished(ev -> showTemporaryBlackout(PAUSE_MED, this::showHallway));
+        pause.play();
+    }
+});
 
         HBox bottom = new HBox(14, inspect, take);
         bottom.setAlignment(Pos.CENTER);
@@ -469,7 +512,7 @@ private void updateInventoryUI() {
         BorderPane overlay = new BorderPane();
 
         Label desc = new Label(
-                "A narrow corridor stretches out, lit by a single flickering bulb. Doors wait north, east, and west. " +
+                "A narrow corridor stretches out, lit by a single flickering bulb. Doors await north, east, and west. " +
                         "South, a heavy iron door bristles with ancient locks."
         );
         desc.setTextFill(Color.rgb(161, 3, 252, 1.0));
@@ -508,48 +551,54 @@ private void updateInventoryUI() {
     }
 
 private void trySouthDoor() {
-    // choose the background image
-    String attemptImage = fileExists("exit_attempt.jpg") 
-            ? "exit_attempt.jpg" 
-            : (fileExists("exit.jpg") ? "exit.jpg" : null);
-    ImageView bg = attemptImage != null ? loadImageView(attemptImage) : null;
+    // candidate backgrounds
+    String[] candidates = { "exit.jpg", "exit.png", "mansion_out.jpg" };
+    String chosen = null;
+    for (String c : candidates) {
+        if (fileExists(c)) { chosen = c; break; }
+    }
+    ImageView bg = chosen != null ? loadImageView(chosen) : null;
 
+    // transparent overlay
     BorderPane overlay = new BorderPane();
+    overlay.setStyle("-fx-background-color: transparent;");
 
-    // local narration label for this scene
+    // center label
     Label attemptText = new Label("You press your hand to the heavy southern door and pull. It resists with centuries of rust.");
     attemptText.setWrapText(true);
-    attemptText.setTextFill(Color.WHITE);
-    attemptText.setFont(Font.font(15));
-    overlay.setCenter(attemptText);
+    attemptText.setFont(Font.font(20));
+    attemptText.setMaxWidth(600);
+    attemptText.setAlignment(Pos.CENTER);
+    attemptText.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+    attemptText.setStyle("-fx-text-fill: #B7410E; -fx-background-color: transparent;"); // rusty text, no background
 
-    // build and show scene
+    // stack label dead-center, transparent as hell
+    StackPane centerPane = new StackPane(attemptText);
+    centerPane.setAlignment(Pos.CENTER);
+    centerPane.setStyle("-fx-background-color: transparent;");
+    overlay.setCenter(centerPane);
+
     Scene s = buildScene(bg, overlay, 1000, 700);
     primaryStage.setScene(s);
 
-    // pause before checking outcome
-    PauseTransition pause = new PauseTransition(Duration.seconds(PAUSE_MED)); 
+    PauseTransition pause = new PauseTransition(Duration.seconds(PAUSE_MED));
     pause.setOnFinished(ev -> {
         if (letters.contains('O') && letters.contains('C') && letters.contains('K')) {
-            // success path
             appendText("You assemble the letters and press them into the dial. The mechanism accepts them with a shudder.");
             showEscapeSequence();
         } else {
-            // failure path
             attemptText.setText("Shadows creep along the lock's seam, a cold breath exhaling from the iron. The mechanism resists.");
-            attemptText.setTextFill(Color.RED);
-
-            // print lock stanza text (use attemptText instead of global desc)
+            attemptText.setStyle("-fx-text-fill: red; -fx-font-size: 15px; -fx-background-color: transparent;");
             printLockStanzaLocal(pendantNumber, attemptText);
 
             pendantNumber--;
             updateInventoryUI();
 
-            if (pendantNumber < 0) {
+            if (pendantNumber <= 0) {
                 showDeathSequence();
             } else {
                 PauseTransition p2 = new PauseTransition(Duration.seconds(PAUSE_SHORT));
-                p2.setOnFinished(ev2 -> showHallway()); // go back to hallway
+                p2.setOnFinished(ev2 -> showHallway());
                 p2.play();
             }
         }
@@ -557,20 +606,31 @@ private void trySouthDoor() {
     pause.play();
 }
 
-// helper that works on the given label instead of desc
-private void printLockStanzaLocal(int number, Label target) {
-    target.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-    target.setText("The cursed lock begins ticking....\n \t The number shifts: " + number);
 
-    if (number == 3) appendText("A shadow flickers at the edge of your vision.");
-    if (number == 2) appendText("You hear footsteps behind you, drawing closer...");
-    if (number == 1) appendText("A whisper breathes your name. Your skin turns cold.");
+// updated helper for Label (string-building)
+private void printLockStanzaLocal(int number, Label target) {
+    target.setStyle("-fx-font-weight: bold; -fx-background-color: transparent;");
+    target.setTextFill(Color.RED);
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("The cursed Pendant begins ticking....\n\t\t\t\t\t\t\tThe number shifts: ").append(number-1).append("\n\n");
+
+    if (number == 3) sb.append("\tA shadow flickers at the edge of your vision.\n");
+    if (number == 2) sb.append("\tYou hear footsteps behind you, drawing closer...\n");
+    if (number == 1) sb.append("A whisper breathes your name. Your skin turns cold.\n");
     if (number <= 0) {
-        appendText("The lock clicks to zero.");
-        appendText("The shadows rise like a tide, swallowing every inch of light.");
-        appendText("You are trapped eternally, consumed by the darkness...");
+        sb.append("The lock clicks to zero.\n");
+        sb.append("The shadows rise like a tide, swallowing every inch of light.\n");
+        sb.append("You are trapped eternally, consumed by the darkness...\n");
     }
+
+    target.setText(sb.toString());
+    target.setWrapText(true);
+    target.setAlignment(Pos.CENTER);
+    target.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 }
+
+
 
 
     /** Show a puzzle room with Inspect / Solve / Back controls. */
@@ -700,7 +760,8 @@ private void printLockStanzaLocal(int number, Label target) {
      * - if pendantNumber < 0 -> run the death sequence (images + blackout + shadow.png)
      * - otherwise -> short textual feedback and return to same room (no blackout)
      */
-    private void failPuzzleAndReturn(String room, Label desc) {
+    
+     private void failPuzzleAndReturn(String room, Label desc) {
     // decrement lives on failure, clamp at 0
     pendantNumber = Math.max(pendantNumber - 1, 0);
 
@@ -716,18 +777,43 @@ private void printLockStanzaLocal(int number, Label target) {
         return;
     }
 
-    // give textual feedback
-    desc.setText("The pendant grows colder. You steel yourself to try again.");
-    desc.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
-
+    // message to show in the middle
+    String message = "The pendant grows colder. You steel yourself to try again.";
     appendText("A chill runs through you as the puzzle slips away...");
 
-    // return to the same room after a short pause
+    // Load the room background (fallback to null if missing)
+    String bgFile = roomBackgroundFor(room);
+    ImageView bg = (bgFile != null && fileExists(bgFile)) ? loadImageView(bgFile) : null;
+
+    // Transparent overlay so no white boxes appear
+    BorderPane overlay = new BorderPane();
+    overlay.setStyle("-fx-background-color: transparent;");
+
+    // Centered label (transparent background, bold red text)
+    Label centerMsg = new Label(message);
+    centerMsg.setWrapText(true);
+    centerMsg.setTextFill(Color.RED);
+    centerMsg.setFont(Font.font(18));
+    centerMsg.setMaxWidth(600); // readable width for centered paragraph
+    centerMsg.setAlignment(Pos.CENTER);
+    centerMsg.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+    centerMsg.setStyle("-fx-font-weight: bold; -fx-background-color: transparent;");
+
+    // Put label inside a transparent StackPane centered over image
+    StackPane centerPane = new StackPane(centerMsg);
+    centerPane.setAlignment(Pos.CENTER);
+    centerPane.setStyle("-fx-background-color: transparent;");
+    overlay.setCenter(centerPane);
+
+    // Build scene with same dimensions you use elsewhere (keeps proportions consistent)
+    Scene s = buildScene(bg, overlay, 1000, 700);
+    primaryStage.setScene(s);
+
+    // Return to the same room after a short pause
     PauseTransition p = new PauseTransition(Duration.seconds(PAUSE_MED));
     p.setOnFinished(ev -> showPuzzleRoom(room));
     p.play();
 }
-
 
 
     // -------------------- Death & Escape sequences --------------------
@@ -777,7 +863,7 @@ private void showDeathSequence() {
 
     BorderPane finalOverlay = new BorderPane();
     Label endText = new Label(
-        "The door never opens. The mansion exhales its last breath, and you are swallowed in silence...\n\n \t\t\t\t\t--- Ending: Death ---"
+        "The door never opens. The mansion exhales its last breath, and you are swallowed in silence...\n\n \t\t\t\t\t\t\t--- Ending: Death ---"
     );
     endText.setWrapText(true);
     endText.setTextFill(Color.web("#ff3333"));
@@ -841,30 +927,25 @@ private void showDeathSequence() {
         BorderPane overlay2 = new BorderPane();
 
         Label t2 = new Label(
-            "You step out onto cold, wet grass. The mansion shrinks behind you.\n\n \t\t\t\t\t--- Ending: Escape ---"
+            "You step out onto cold, wet grass. The mansion shrinks behind you.\n\n\t\t\t\t\t--- Ending: Escape ---"
         );
         t2.setWrapText(true);
         t2.setTextFill(Color.CORAL);
         t2.setFont(Font.font(16));
 
-        // 🔹 Buttons (styled like main menu)
-        Button escapeBtn = new Button("Escape");
-        escapeBtn.setOnAction(e -> {
-            System.out.println("Escape ending confirmed."); // debug
-            Platform.exit();
-        });
+        // 🔹 Buttons (Restart and Exit)
+        Button restartBtn = new Button(" Restart ");
+        restartBtn.setOnAction(e -> showTitleScreen());
 
-        Button exitBtn = new Button("Exit");
-        exitBtn.setOnAction(e -> {
-            System.out.println("Game exited from escape scene."); // debug
-            Platform.exit();
-        });
+        Button exitBtn = new Button(" Escape ");
+        exitBtn.setOnAction(e -> Platform.exit());
 
-        // Apply consistent styling
-        escapeBtn.setStyle("-fx-font-size: 14px; -fx-background-color: black; -fx-text-fill: white;");
-        exitBtn.setStyle("-fx-font-size: 14px; -fx-background-color: black; -fx-text-fill: white;");
+        // Apply main menu button style
+        String style = "-fx-background-color: rgba(0,0,0,0.75); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 12 6 12; -fx-border-color: #666; -fx-border-width:1;";
+        restartBtn.setStyle(style);
+        exitBtn.setStyle(style);
 
-        VBox vbox = new VBox(20, t2, escapeBtn, exitBtn);
+        VBox vbox = new VBox(20, t2, restartBtn, exitBtn);
         vbox.setAlignment(Pos.CENTER);
 
         overlay2.setCenter(vbox);
