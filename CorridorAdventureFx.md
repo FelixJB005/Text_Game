@@ -30,47 +30,29 @@
                     images ->"C:/Java/Programe/images/"
 
 */
-
 import javafx.animation.PauseTransition;   //: small delays / timed transitions between scenes.
-
+import javafx.animation.ScaleTransition;
 import javafx.application.Application;  // : JavaFX entry point class.
-
 import javafx.application.Platform;       // : used to exit the app cleanly.
-
 import javafx.geometry.*;                // : layout helpers (Insets, Pos).
-
 import javafx.scene.*;                    //: core scene graph, controls, layout containers.
-
 import javafx.scene.image.*;              //: load and display background images.
-
 import javafx.scene.layout.*;             //: BorderPane, VBox/HBox, StackPane for layout composition.
-
 import javafx.scene.paint.Color;          //: used for overlay/text color.
-
 import javafx.scene.text.Font;             //: set fonts for labels and controls.
-
 import javafx.scene.text.FontWeight;
-
 import javafx.stage.Stage;                 //: main application window.
-
 import javafx.util.Duration;               //: durations for PauseTransition.
-
 import javafx.geometry.Insets;
-
 import javafx.geometry.Pos;
-
 import javafx.scene.control.*;
-
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
-
 import javafx.scene.image.ImageView;
-
 import javafx.scene.shape.Rectangle;
 
 
-
 import java.io.File;                       //: check for presence of image files on disk.
-
 import java.util.*;                        //: collections and Optional used by dialogs and state.
 
 public class CorridorAdventure extends Application {
@@ -84,13 +66,10 @@ public class CorridorAdventure extends Application {
     // -------- game & UI state ----------
     private Stage primaryStage;
     private final String IMAGE_PATH = "C:/Java/Programe/images/"; // change to your images folder
-    
     private String playerName = "";
 
     private boolean ended = false;         // reached ending flag
-    
     private Set<Character> letters = new LinkedHashSet<>(); // collected letters O,C,K
-    
     private Map<String, Boolean> solved = new HashMap<>(); // solved flags
 
     // top-right inventory box (rebuilt each time)
@@ -483,11 +462,11 @@ private void updateInventoryUI() {
         updateInventoryUI();
 
         // Step 1: Show the text in blue-violet over mansion_in.jpg
-        desc.setText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t\t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
+        desc.setText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
         desc.setTextFill(Color.BLUEVIOLET); // Blue-violet text
         desc.setFont(Font.font("System", 20)); // Make the text bigger (adjust size as needed)
 
-        appendText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t\t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
+        appendText("As you take and admire the Pendant a sharp pain hits Your skull.\n \t You clutch Your head, but everything fades and You awaken in a Dark Corridor.");
 
         // Step 2: Wait 3 seconds, then trigger blackout
         PauseTransition pause = new PauseTransition(Duration.seconds(3));
@@ -597,7 +576,7 @@ private void trySouthDoor() {
             if (pendantNumber <= 0) {
                 showDeathSequence();
             } else {
-                PauseTransition p2 = new PauseTransition(Duration.seconds(PAUSE_SHORT));
+                PauseTransition p2 = new PauseTransition(Duration.seconds(PAUSE_MED));
                 p2.setOnFinished(ev2 -> showHallway());
                 p2.play();
             }
@@ -934,21 +913,76 @@ private void showDeathSequence() {
         t2.setFont(Font.font(16));
 
         // 🔹 Buttons (Restart and Exit)
+        // 🔹 Buttons (Restart and Exit)
         Button restartBtn = new Button(" Restart ");
+        // When clicked, restart the game (replace with your actual restart method)
         restartBtn.setOnAction(e -> showTitleScreen());
 
-        Button exitBtn = new Button(" Escape ");
+        Button exitBtn = new Button("      Escape      ");
+        // When clicked, exit the game cleanly
         exitBtn.setOnAction(e -> Platform.exit());
 
+        // --------------------------
         // Apply main menu button style
-        String style = "-fx-background-color: rgba(0,0,0,0.75); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 6 12 6 12; -fx-border-color: #666; -fx-border-width:1;";
+        // --------------------------
+        // Semi-transparent black background, white bold text, padding, border
+        String style = "-fx-background-color: rgba(0,0,0,0.75);"
+             + "-fx-text-fill: white;"
+             + "-fx-font-weight: bold;"
+             + "-fx-padding: 6 12 6 12;"
+             + "-fx-border-color: #666;"
+             + "-fx-border-width:1;";
         restartBtn.setStyle(style);
         exitBtn.setStyle(style);
 
-        VBox vbox = new VBox(20, t2, restartBtn, exitBtn);
-        vbox.setAlignment(Pos.CENTER);
+        // --------------------------
+        // Add drop shadow for depth
+        // --------------------------
+        DropShadow ds = new DropShadow();
+        ds.setRadius(6);                // how soft the shadow is
+        ds.setOffsetY(2);               // vertical offset to simulate light
+        ds.setColor(Color.color(0, 0, 0, 0.5)); // semi-transparent black
+        restartBtn.setEffect(ds);
+        exitBtn.setEffect(ds);
 
+        // --------------------------
+        // Hover shrink effect using ScaleTransition
+        // --------------------------
+        double hoverScale = 0.96;                  // shrink to 96% of original size
+        Duration dur = Duration.millis(120);      // short animation for snappy feel
+
+        // Restart button transitions
+        ScaleTransition stEnterR = new ScaleTransition(dur, restartBtn); // on hover enter
+        stEnterR.setToX(hoverScale);
+        stEnterR.setToY(hoverScale);
+
+        ScaleTransition stExitR = new ScaleTransition(dur, restartBtn);  // on hover exit
+        stExitR.setToX(1.0);
+        stExitR.setToY(1.0);
+
+        // Apply hover listeners
+        restartBtn.setOnMouseEntered(e -> { stExitR.stop(); stEnterR.playFromStart(); });
+        restartBtn.setOnMouseExited(e -> { stEnterR.stop(); stExitR.playFromStart(); });
+
+        // Exit button transitions (same idea)
+        ScaleTransition stEnterE = new ScaleTransition(dur, exitBtn);
+        stEnterE.setToX(hoverScale);
+        stEnterE.setToY(hoverScale);
+
+        ScaleTransition stExitE = new ScaleTransition(dur, exitBtn);
+        stExitE.setToX(1.0);
+        stExitE.setToY(1.0);
+
+        exitBtn.setOnMouseEntered(e -> { stExitE.stop(); stEnterE.playFromStart(); });
+        exitBtn.setOnMouseExited(e -> { stEnterE.stop(); stExitE.playFromStart(); });
+
+        // --------------------------
+        // Layout buttons vertically with spacing and center alignment
+        // --------------------------
+        VBox vbox = new VBox(20, t2, restartBtn, exitBtn); // 20px vertical gap
+        vbox.setAlignment(Pos.CENTER);
         overlay2.setCenter(vbox);
+
 
         Scene finalScene = buildScene(bg2, overlay2, 1000, 700);
         primaryStage.setScene(finalScene);
