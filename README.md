@@ -9,7 +9,7 @@ Welcome to THE CORRIDOR — a tense, atmospheric text adventure written in Java.
 
 Prerequisites
 - Java 11+ installed (OpenJDK or Oracle JRE/JDK)
-
+- JavaFX is also required
 Run from source (simple / generic instructions — adjust package paths if your Main class differs):
 1. Open a terminal in the repository root.
 2. Compile:
@@ -51,20 +51,6 @@ Inventory & items
 - equip <item>       — equip weapon or tool
 - unequip <item>
 
-Combat & stealth
-- attack <target>
-- strike <target>
-- flee
-- sneak
-- hide
-
-Game control
-- save <name>
-- load <name>
-- help
-- stats — show player health, stamina, sanity, etc.
-- quit
-
 Tip: Short forms are supported in many cases (e.g., "n" for "go north", "inv" for "inventory").
 
 ---
@@ -90,29 +76,23 @@ This section explains the in-game systems — the rules that determine outcomes 
    - Items are typed: consumable (first-aid kit), equipment (knife), key (rusty key), utility (rope), quest (map fragment).
    - Combining or using items on targets can unlock puzzles (e.g., use key on door, light torch at altar).
 
-4. Combat
-   - Turn-based, simple actions: attack, defend, use item, flee.
-   - Weapons have damage ranges and may consume stamina to use.
-   - Armor reduces incoming damage and may cost stamina to wear/move in.
-   - Critical hits and misses are possible (based on weapon, player stats, and randomness).
-   - Enemies have behaviors: aggressive, patrol, stealthy, or stationary. Some react to sound or light.
-
-5. Stealth & detection
+     
+4. Stealth & detection
    - Noise and light influence detection. Running and attacking make noise.
    - Sneaking reduces detection chance but consumes stamina.
    - If an enemy detects you, it may call reinforcements or flee to alert others.
 
-6. Puzzles & environment
+5. Puzzles & environment
    - Puzzles are logic or exploration-based (lever sequences, pattern observation, wiring).
    - Environmental hazards include traps (pressure plates), collapsing floors, sealed doors, poison gas.
    - Some puzzles require combining items or reading notes found in the corridor.
 
-7. Save / Load
+6. Save / Load
    - Use `save <name>` to store your game state.
    - `load <name>` to restore it.
    - Important: save often! Some sections are unforgiving.
 
-8. Consequences & endings
+7. Consequences & endings
    - Multiple endings depend on choices, items recovered, areas explored, and sanity level.
    - Some endings unlock secrets for future playthroughs (New Game+ possibilities).
 
